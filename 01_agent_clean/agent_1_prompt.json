@@ -1,0 +1,11 @@
+{
+    "issues": [
+            {"column": "price_in_euro", "type": "dtype", "detail": "...", "severity": "high"}
+    ],
+    "transformations": [
+        {"action": "replace_sentinels", "column": "fuel_consumption_g_km", "from": ["- (g/km)"], "to": null},
+        {"action": "parse_european_decimal", "column": "fuel_consumption_1_100km"},
+        {"action": "clip_outliers", "column": "price_in_euro", "method": "iqr", "factor": 3}
+    ],
+    "report_markdown": "## Summary\n..."
+}
