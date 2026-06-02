@@ -45,20 +45,28 @@ def call_llm(system, user):
     return completion.choices[0].message.content
 
 
-def _load_agent_1():
-    path = _ROOT / "01_agent_clean" / "agent_1.py"
-    spec = spec_from_file_location("agent_1", path)
+def _load_agent(module_name: str, folder: str, filename: str):
+    path = _ROOT / folder / filename
+    spec = spec_from_file_location(module_name, path)
     mod = module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
 
 
 def main():
-    agent_1 = _load_agent_1()
-    result = agent_1.run(call_llm)
-    print(f"Agent 1 done: {result['rows_in']:,} → {result['rows_out']:,} rows")
-    print(f"Cleaned CSV: {result['cleaned_csv']}")
-    print(f"Report:      {result['report']}")
+    agent_1 = _load_agent("agent_1", "01_agent_clean", "agent_1.py")
+    result_1 = agent_1.run(call_llm)
+    print(f"Agent 1 done: {result_1['rows_in']:,} → {result_1['rows_out']:,} rows")
+    print(f"Cleaned CSV: {result_1['cleaned_csv']}")
+    print(f"Report:      {result_1['report']}")
+    print()
+
+    agent_2 = _load_agent("agent_2", "02_agent_feature", "agent_2.py")
+    result_2 = agent_2.run(call_llm)
+    print(f"Agent 2 done: {result_2['rows_in']:,} → {result_2['rows_out']:,} rows")
+    print(f"New columns: {', '.join(result_2['new_columns']) or '(none)'}")
+    print(f"Featured CSV: {result_2['featured_csv']}")
+    print(f"Report:       {result_2['report']}")
 
 
 if __name__ == "__main__":

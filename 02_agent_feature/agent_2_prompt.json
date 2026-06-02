@@ -1,0 +1,47 @@
+{
+  "features": [
+    {
+      "name": "price_per_kw",
+      "action": "ratio",
+      "column_a": "price_in_euro",
+      "column_b": "power_kw",
+      "epsilon": 1e-6,
+      "justification": "Normalizes price by engine power so listings with similar performance are comparable; useful for value-for-money signals in regression.",
+      "pandas_code": "df['price_per_kw'] = df['price_in_euro'] / (df['power_kw'].replace(0, np.nan) + 1e-6)"
+    },
+    {
+      "name": "log_price",
+      "action": "log1p",
+      "column": "price_in_euro",
+      "justification": "Price is right-skewed; log1p stabilizes variance and linearizes relationships for linear models.",
+      "pandas_code": "df['log_price'] = np.log1p(df['price_in_euro'].clip(lower=0))"
+    },
+    {
+      "name": "vehicle_age",
+      "action": "year_delta",
+      "column": "year",
+      "reference_year": 2023,
+      "justification": "Depreciation and wear correlate with age more than calendar year alone; reference_year should match the dataset era.",
+      "pandas_code": "df['vehicle_age'] = 2023 - df['year']"
+    },
+    {
+      "name": "mileage_per_year",
+      "action": "ratio",
+      "column_a": "mileage_in_km",
+      "column_b": "vehicle_age",
+      "epsilon": 1,
+      "justification": "Annualized usage separates low-mileage old cars from high-mileage young ones; requires vehicle_age or equivalent denominator.",
+      "pandas_code": "df['mileage_per_year'] = df['mileage_in_km'] / (df['vehicle_age'].clip(lower=1))"
+    },
+    {
+      "name": "pca_efficiency",
+      "action": "pca",
+      "columns": ["fuel_consumption_l_100km", "fuel_consumption_g_km", "mileage_in_km"],
+      "n_components": 2,
+      "prefix": "pca_eff",
+      "justification": "Combines correlated efficiency/mileage signals into orthogonal components, reducing multicollinearity for linear models.",
+      "pandas_code": "from sklearn.decomposition import PCA\nX = df[cols].fillna(df[cols].median())\npca = PCA(n_components=2)\ncomps = pca.fit_transform(X)\ndf[['pca_eff_1','pca_eff_2']] = comps"
+    }
+  ],
+  "report_markdown": "## Summary\nProposed five derived features focused on price normalization, skew correction, age/usage, and efficiency compression.\n"
+}

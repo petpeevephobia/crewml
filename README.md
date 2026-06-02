@@ -19,6 +19,13 @@ The goal is a pipeline you can demo end-to-end — including a deliberate confli
 | `state.json` | Shared read/write state for reports, metrics, and arguments |
 | `call_llm(system, user)` | Single Qwen Cloud API helper used by every agent |
 
+Each agent folder has its own manual (not named `README.md`, to avoid clashing with this file):
+
+| Agent | Manual |
+|-------|--------|
+| Data cleaning | `01_agent_clean/AGENT_1_DATA_CLEANING.md` |
+| Feature engineering | `02_agent_feature/AGENT_2_FEATURE_ENGINEERING.md` |
+
 **LLM:** [Qwen Cloud](https://docs.qwencloud.com/developer-guides/getting-started/introduction)
 
 **Stack:** Python, pandas, scikit-learn (and optional XGBoost) for execution; agents use the LLM for analysis, code generation, and written justification.
