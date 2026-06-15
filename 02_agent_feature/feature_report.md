@@ -1,4 +1,5 @@
 ## Feature Engineering Strategy
+
 Proposed five derived features to strengthen price prediction signals in a large tabular vehicle dataset:
 
 1. **Age & Usage Intensity:** `vehicle_age` linearizes the depreciation timeline, while `mileage_per_year` (a ratio of total mileage to age) isolates heavy vs. light usage patterns that raw mileage alone cannot distinguish.
@@ -68,7 +69,6 @@ X = df[cols].fillna(df[cols].median())
 df[['pca_ue_1', 'pca_ue_2']] = PCA(n_components=2).fit_transform(X)
 ```
 
-
 ## Steps applied (code)
 
 - year_delta vehicle_age = 2023 - year
@@ -76,3 +76,4 @@ df[['pca_ue_1', 'pca_ue_2']] = PCA(n_components=2).fit_transform(X)
 - log1p log_mileage_in_km from mileage_in_km
 - log1p log_fuel_consumption_l_100km from fuel_consumption_l_100km
 - pca on ['mileage_in_km', 'fuel_consumption_l_100km', 'fuel_consumption_g_km'] → pca_ue_1..2 (explained variance ratios: [0.379, 0.34])
+
