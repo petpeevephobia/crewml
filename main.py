@@ -54,19 +54,35 @@ def _load_agent(module_name: str, folder: str, filename: str):
 
 
 def main():
-    agent_1 = _load_agent("agent_1", "01_agent_clean", "agent_1.py")
-    result_1 = agent_1.run(call_llm)
-    print(f"Agent 1 done: {result_1['rows_in']:,} → {result_1['rows_out']:,} rows")
-    print(f"Cleaned CSV: {result_1['cleaned_csv']}")
-    print(f"Report:      {result_1['report']}")
-    print()
+    # # AGENT 1
+    # print("Running Agent 1: Data Cleaning...")
+    # agent_1 = _load_agent("agent_1", "01_agent_clean", "agent_1.py")
+    # result_1 = agent_1.run(call_llm)
+    # print(f"Agent 1 done: {result_1['rows_in']:,} → {result_1['rows_out']:,} rows")
+    # print(f"Cleaned CSV: {result_1['cleaned_csv']}")
+    # print(f"Report:      {result_1['report']}")
+    # print()
 
-    agent_2 = _load_agent("agent_2", "02_agent_feature", "agent_2.py")
-    result_2 = agent_2.run(call_llm)
-    print(f"Agent 2 done: {result_2['rows_in']:,} → {result_2['rows_out']:,} rows")
-    print(f"New columns: {', '.join(result_2['new_columns']) or '(none)'}")
-    print(f"Featured CSV: {result_2['featured_csv']}")
-    print(f"Report:       {result_2['report']}")
+    # # AGENT 2
+    # print("Running Agent 2: Feature Curation...")
+    # agent_2 = _load_agent("agent_2", "02_agent_feature", "agent_2.py")
+    # result_2 = agent_2.run(call_llm)
+    # print(f"Agent 2 done: {result_2['rows_in']:,} → {result_2['rows_out']:,} rows")
+    # print(f"New columns: {', '.join(result_2['new_columns']) or '(none)'}")
+    # print(f"Featured CSV: {result_2['featured_csv']}")
+    # print(f"Report:       {result_2['report']}")
+
+    # AGENT 3
+    print("Running Agent 3: Model Selection...")
+    agent_3 = _load_agent("agent_3", "03_agent_model", "agent_3.py")
+    result_3 = agent_3.run(call_llm)
+    print(f"Agent 3 done: {result_3['analysis']}")
+    for model_name, metrics in result_3['comparison_table'].items():
+        print(f"  * {model_name}:")
+        print(f"    - R2 Score: {metrics['R2_Score']}")
+        print(f"    - RMSE:     {metrics['RMSE']}")
+    print("Results saved to state.json")
+    print()
 
 
 if __name__ == "__main__":

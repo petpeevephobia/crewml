@@ -1,19 +1,21 @@
-## Data Quality Summary
+## Data Quality & Cleaning Report
 
-**Dataset:** 251,079 rows × 15 columns
+**Dataset Overview:** 251,079 rows, 15 columns.
 
-### Identified Issues
-- **Type Mismatch:** Key numeric columns (`year`, `price_in_euro`, `power_kw`, `power_ps`) and fuel consumption metrics are stored as strings/objects.
-- **Formatting & Sentinels:** Fuel consumption columns use European decimal commas with attached units. `fuel_consumption_g_km` uses `- (g/km)` as a missing value sentinel. `fuel_consumption_l_100km` contains ~10.7% nulls.
-- **Outliers:** `mileage_in_km` has an extreme maximum of 3,800,000 km, which is physically impossible for passenger cars and will skew modeling.
-- **Low-Frequency Nulls:** Minor missingness in `color`, `registration_date`, `power_kw`, `power_ps`, and `mileage_in_km` (<0.1% each).
+### Key Findings
+- **Dtype Mismatches:** Six numeric features (`year`, `price_in_euro`, `power_kw`, `power_ps`, `fuel_consumption_l_100km`, `fuel_consumption_g_km`) are stored as strings, blocking mathematical operations and model ingestion.
+- **Formatting & Sentinels:** `fuel_consumption_l_100km` mixes European comma decimals with text units (`l/100 km`). `fuel_consumption_g_km` uses a `- (g/km)` sentinel for unknown values rather than standard nulls.
+- **Missing Data:** `fuel_consumption_l_100km` has a 10.7% missing rate (likely empty strings). Minor missingness exists in `power_kw` (0.05%), `power_ps` (0.05%), and `color` (0.07%).
+- **Outliers:** `mileage_in_km` reaches 3,800,000 km, which is physically unrealistic for consumer vehicles and heavily distorts the mean (85,340 km) and standard deviation.
+- **Metadata:** `Unnamed: 0` is a redundant index column.
 
-### Applied Fixes
-1. Replaced `- (g/km)` sentinel in `fuel_consumption_g_km` with `null`.
-2. Parsed European decimals and stripped unit suffixes from both fuel consumption columns, converting them to numeric types.
-3. Cast `year`, `power_kw`, and `power_ps` to `int`, and `price_in_euro` to `float`.
-4. Clipped extreme outliers in `mileage_in_km` using the IQR method (factor=3).
-5. Preserved low-frequency nulls as-is to maximize data retention. No rows were dropped.
+### Applied Transformations
+1. Replaced `- (g/km)` sentinel in `fuel_consumption_g_km` with proper `NaN` values.
+2. Parsed European commas and stripped unit text from both fuel consumption columns, converting them to numeric floats.
+3. Cast `year`, `price_in_euro`, `power_kw`, and `power_ps` to `int` and `float` respectively.
+4. Applied IQR-based clipping (factor=3) to `mileage_in_km` to cap extreme outliers without dropping records.
+
+All fixes prioritize value preservation over row deletion. Downstream steps should handle the resulting `NaN`s (imputation or model-specific null handling) and drop the `Unnamed: 0` index column before training.
 
 ## Run stats
 
@@ -22,15 +24,14 @@
 
 ## Issues identified
 
-- **fuel_consumption_g_km** (sentinel, high): Contains '- (g/km)' indicating missing or unavailable data
-- **fuel_consumption_l_100km** (dtype, high): Stored as object with European decimal commas and unit suffixes (e.g., '10,9 l/100 km')
-- **fuel_consumption_g_km** (dtype, high): Stored as object with unit suffixes and sentinel values
-- **year** (dtype, medium): Stored as object, should be integer
-- **price_in_euro** (dtype, high): Stored as object, should be numeric
-- **power_kw** (dtype, medium): Stored as object, should be integer
-- **power_ps** (dtype, medium): Stored as object, should be integer
-- **mileage_in_km** (outlier, high): Maximum value 3,800,000 km is physically unrealistic and likely a data entry error
-- **fuel_consumption_l_100km** (null, medium): Contains ~10.7% missing values
+- **year** (dtype, high): Stored as string, should be numeric (int)
+- **price_in_euro** (dtype, high): Stored as string, should be numeric (float)
+- **power_kw** (dtype, high): Stored as string, should be numeric (float)
+- **power_ps** (dtype, high): Stored as string, should be numeric (float)
+- **fuel_consumption_l_100km** (format, high): Contains European comma decimals and unit suffixes (e.g., '10,9 l/100 km')
+- **fuel_consumption_g_km** (sentinel, medium): Contains '- (g/km)' placeholder for missing data instead of null
+- **fuel_consumption_g_km** (format, high): Stored as string with unit suffixes, should be numeric
+- **mileage_in_km** (outlier, high): Maximum value 3,800,000 km is physically implausible and will skew statistical summaries and model scaling
 
 ## Steps applied (code)
 
@@ -39,6 +40,6 @@
 - parse_european_decimal on fuel_consumption_g_km: nulls 35809 → 36770
 - astype on year → int
 - astype on price_in_euro → float
-- astype on power_kw → int
-- astype on power_ps → int
+- astype on power_kw → float
+- astype on power_ps → float
 - clip_outliers on mileage_in_km (IQR×3.0): 336 values capped
