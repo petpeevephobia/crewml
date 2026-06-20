@@ -230,6 +230,7 @@ def update_state(agent_id: str, new_data: dict):
 
 def run(call_llm, input_path: str | None = None) -> dict:
     """Profile → LLM JSON plan → apply features → write outputs."""
+    print("\tLoading cleaned CSV ...")
     input_path = str(_ROOT / input_path) if input_path else str(_ROOT / INPUT_CSV)
     if not Path(input_path).is_file():
         raise FileNotFoundError(
@@ -238,6 +239,7 @@ def run(call_llm, input_path: str | None = None) -> dict:
 
     df, profile = build_profile(input_path)
 
+    print("\tSuggesting new features in CSV ...")
     schema_example = _SCHEMA_PATH.read_text(encoding="utf-8")
     system = f"{SYSTEM_PROMPT}\n\nExample output shape:\n{schema_example}"
     user = json.dumps(
@@ -249,12 +251,14 @@ def run(call_llm, input_path: str | None = None) -> dict:
     )
 
     raw = call_llm(system, user)
+    print("\tParsing LLM output to JSON ...")
     spec = _parse_llm_json(raw)
 
     original_cols = set(df.columns)
     df_feat, apply_log = apply_features(df.copy(), spec.get("features"))
     new_cols = [c for c in df_feat.columns if c not in original_cols]
 
+    print("\tReporting in state.json ...")
     report = spec.get("report_markdown", "# Feature engineering report\n")
     report += f"\n\n## Run stats\n\n- Input rows: {len(df):,}\n- Output rows: {len(df_feat):,}\n"
     report += f"- New columns ({len(new_cols)}): {', '.join(new_cols) if new_cols else '(none)'}\n"

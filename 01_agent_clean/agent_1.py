@@ -148,6 +148,7 @@ def update_state(agent_id: str, new_data: dict):
 
 def run(call_llm, input_path: str | None = None) -> dict:
     """Profile → LLM JSON plan → apply on full CSV → write outputs."""
+    print("\tLoading CSV ...")
     input_path = str(_ROOT / input_path) if input_path else str(_ROOT / INPUT_CSV)
     df, profile = build_profile(input_path)
 
@@ -155,11 +156,15 @@ def run(call_llm, input_path: str | None = None) -> dict:
     system = f"{SYSTEM_PROMPT}\n\nExample output shape:\n{schema_example}"
     user = json.dumps({"data_profile": profile}, indent=2)
 
+    print("\tAnalysis CSV ...")
     raw = call_llm(system, user)
+    print("\tParsing LLM output to JSON ...")
     spec = _parse_llm_json(raw)
 
+    print("\tApplying cleaning transformation to CSV ...")
     df_clean, apply_log = apply_transformations(df.copy(), spec.get("transformations"))
 
+    print("\tReporting in state.json ...")
     report = spec.get("report_markdown", "# Data cleaning report\n")
     report += f"\n\n## Run stats\n\n- Input rows: {len(df):,}\n- Output rows: {len(df_clean):,}\n"
     if spec.get("issues"):

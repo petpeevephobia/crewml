@@ -59,16 +59,19 @@ If developing Agent 3 and want to test its data handling entirely by itself:
 """
 def run(call_llm, input_path: str | None = None) -> dict:
     # 1. load dataset
+    print("\tLoading featured CSV ...")
     target_path = _ROOT / input_path if input_path else INPUT_CSV
     df = pd.read_csv(target_path)
     df = df.dropna()
 
     # MEMORY TOO BIG (30.9 GiB): drop text cols with very high cardinality, aka >50 unique values
+    print("\tFeeding only low cardinality columns ...")
     object_cols = df.select_dtypes(include=["object"]).columns
     high_cardinality_cols = [col for col in object_cols if df[col].nunique() > 50]
     df = df.drop(columns=high_cardinality_cols)
 
     # one-hot encode safely the remaining text cols
+    print("\tOne-hot encoding the chosen columns ...")
     df = pd.get_dummies(df, drop_first=True)
 
     target_col = "price_in_euro"
@@ -80,6 +83,7 @@ def run(call_llm, input_path: str | None = None) -> dict:
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # 2. train models (42 is always the answer lol)
+    print("\tTraining models ...")
     models = {
         "Linear Regression": LinearRegression(),
         "Random Forest": RandomForestRegressor(n_estimators=50, random_state=42),
@@ -87,6 +91,7 @@ def run(call_llm, input_path: str | None = None) -> dict:
     }
 
     results = {}
+    print("\tCalculating R-squared and Root Mean Squared Error (RMSE) ...")
     for name, model in models.items():
         model.fit(X_train, y_train)
         predictions = model.predict(X_test)
@@ -96,13 +101,16 @@ def run(call_llm, input_path: str | None = None) -> dict:
         results[name] = {"R2_Score": round(r2, 4), "RMSE": round(rmse, 2)}
 
     # 4. inject metrics into LLM prompt template
+    print("\tInject metrics into LLM prompt ...")
     # json.dumps() turns our Python dictionary into a cleanly formatted string for the LLM to read
     formatted_prompt = SYSTEM_PROMPT.format(metrics=json.dumps(results, indent=2))
 
     # 5. call LLM to evaluate the three models
+    print("\tEvaluating models ...")
     analysis = call_llm(formatted_prompt, "Analyze these model metrics and declare a winner.")
 
     # 6. package final payload -> save to state.json
+    print("\tReporting in state.json ...")
     agent_output = {
         "comparison_table": results,
         "analysis": analysis.strip()
@@ -113,9 +121,9 @@ def run(call_llm, input_path: str | None = None) -> dict:
         with open(STATE_FILE, "r", encoding="utf-8") as f:
             state = json.load(f)
 
-    state['Agent_3_Model_Selection'] = agent_output
+    state['model_selection'] = agent_output
 
     # Use the helper function instead of manual open/read/write logic
-    update_state("Agent_3_Model_Selection", agent_output)
+    update_state("model_selection", agent_output)
 
     return agent_output

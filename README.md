@@ -1,6 +1,6 @@
 # CrewML
 
-Agents that collaborate to build and validate an ML pipeline for you. Each agent covers a step you would recognize from classical ML (cleaning, features, model choice, validation), wired together as a live AutoML demo on a real automotive dataset.
+Agents that collaborate to build and validate an ML pipeline for you. Each agent covers a step you would recognize from classical ML (cleaning, features, model choice, validation), wired together as a live AutoML demo on a real dataset.
 
 ## What this is
 
@@ -14,7 +14,7 @@ The goal is a pipeline you can demo end-to-end — including a deliberate confli
 
 | Piece | Role |
 |-------|------|
-| `main.py` | Orchestrator — runs agents in sequence |
+| `main.py` | Orchestrator that runs agents in sequence |
 | One folder per agent | Data Cleaning, Feature Engineering, Model Selection, Validation, Mediator |
 | `state.json` | Shared read/write state for reports, metrics, and arguments |
 | `call_llm(system, user)` | Single Qwen Cloud API helper used by every agent |
@@ -40,6 +40,12 @@ Each agent folder has its own manual (not named `README.md`, to avoid clashing w
 5. **Mediator** (on conflict) — reads opposing arguments from `state.json`, picks a winner, unblocks the pipeline  
 
 **Phase 3+:** Hardcoded disagreement for the demo; single-agent baseline for accuracy comparison. **Phase 4:** Minimal HTML dashboard polling `state.json` for live status during the run.
+
+## How to run
+In the project directory, simply run
+```
+python main.py
+```
 
 ## References
 
