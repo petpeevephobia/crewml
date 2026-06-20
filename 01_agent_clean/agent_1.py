@@ -156,7 +156,7 @@ def run(call_llm, input_path: str | None = None) -> dict:
     system = f"{SYSTEM_PROMPT}\n\nExample output shape:\n{schema_example}"
     user = json.dumps({"data_profile": profile}, indent=2)
 
-    print("\tAnalysis CSV ...")
+    print("\tAnalysing CSV ...")
     raw = call_llm(system, user)
     print("\tParsing LLM output to JSON ...")
     spec = _parse_llm_json(raw)

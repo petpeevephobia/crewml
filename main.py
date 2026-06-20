@@ -40,8 +40,7 @@ def cleanup_previous_runs():
         "01_agent_clean/cleaned.csv",
         "01_agent_clean/cleaning_report.md",
         "02_agent_feature/featured.csv",
-        "02_agent_feature/feature_report.md",
-        "state.json"
+        "02_agent_feature/feature_report.md"
     ]
     
     for file_path in files_to_delete:
@@ -102,6 +101,7 @@ def main():
     print(f"New columns: {', '.join(result_2['new_columns']) or '(none)'}")
     print(f"Featured CSV: {result_2['featured_csv']}")
     print(f"Report:       {result_2['report']}")
+    print()
 
     # AGENT 3
     print("Running Agent 3: Model Selection...")

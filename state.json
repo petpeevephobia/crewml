@@ -16,26 +16,26 @@
     "rows_out": 251079,
     "new_columns": [
       "vehicle_age",
-      "log_mileage_in_km",
       "mileage_per_year",
-      "pca_power_1"
+      "log_mileage",
+      "log_power"
     ]
   },
-  "Agent_3_Model_Selection": {
+  "model_selection": {
     "comparison_table": {
       "Linear Regression": {
-        "R2_Score": 0.4556,
-        "RMSE": 32580.16
+        "R2_Score": 0.4597,
+        "RMSE": 32458.37
       },
       "Random Forest": {
-        "R2_Score": 0.5964,
-        "RMSE": 28051.82
+        "R2_Score": 0.5804,
+        "RMSE": 28602.17
       },
       "Gradient Boosting": {
-        "R2_Score": 0.5371,
-        "RMSE": 30044.36
+        "R2_Score": 0.5362,
+        "RMSE": 30072.61
       }
     },
-    "analysis": "Based on the test set evaluation, the Random Forest model is the optimal choice for the final pipeline, as it achieves both the highest R\u00b2 score (0.5964) and the lowest RMSE (28051.82). By explaining nearly 60% of the variance in car prices while maintaining the smallest average prediction error, it significantly outperforms Gradient Boosting and Linear Regression. This consistent advantage across both key metrics demonstrates that Random Forest effectively captures complex, non-linear relationships within the dataset without overfitting, making it the most accurate, robust, and reliable model for production deployment."
+    "analysis": "The Random Forest model is the clear winner and should be selected for the final pipeline, as it delivers both the highest R2 score of 0.5804 and the lowest RMSE of 28602.17 across all candidates. While Gradient Boosting shows competitive results, it falls short on both explained variance and average prediction error, and Linear Regression significantly underperforms due to its inability to model the complex, non-linear relationships typical in car pricing. The Random Forest's superior generalization, tighter error margin, and inherent robustness to feature interactions make it the most accurate and production-ready choice for deployment."
   }
 }
