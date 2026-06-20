@@ -121,6 +121,31 @@ def apply_transformations(df: pd.DataFrame, transformations: list) -> tuple[pd.D
     return df, log
 
 
+
+def update_state(agent_id: str, new_data: dict):
+    """
+    Safely reads state.json, updates the entry for this agent, 
+    and writes the entire state back.
+    """
+    state_file = _ROOT / "state.json"
+    
+    # Load existing state or start with empty dict
+    data = {}
+    if state_file.exists() and state_file.stat().st_size > 0:
+        try:
+            with open(state_file, 'r') as f:
+                data = json.load(f)
+        except json.JSONDecodeError:
+            pass # File exists but is corrupt/empty; start fresh
+            
+    # Update state for this specific agent
+    data[agent_id] = new_data
+    
+    # Save back to file
+    with open(state_file, 'w') as f:
+        json.dump(data, f, indent=2)
+
+
 def run(call_llm, input_path: str | None = None) -> dict:
     """Profile → LLM JSON plan → apply on full CSV → write outputs."""
     input_path = str(_ROOT / input_path) if input_path else str(_ROOT / INPUT_CSV)
@@ -155,7 +180,7 @@ def run(call_llm, input_path: str | None = None) -> dict:
     df_clean.to_csv(out_csv, index=False)
     out_report.write_text(report, encoding="utf-8")
 
-    return {
+    result = {
         "agent": AGENT_ID,
         "input": input_path,
         "cleaned_csv": str(out_csv),
@@ -163,3 +188,8 @@ def run(call_llm, input_path: str | None = None) -> dict:
         "rows_in": len(df),
         "rows_out": len(df_clean),
     }
+
+    # Call the helper to update the central state
+    update_state(AGENT_ID, result)
+
+    return result

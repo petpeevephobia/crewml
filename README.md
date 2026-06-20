@@ -25,6 +25,7 @@ Each agent folder has its own manual (not named `README.md`, to avoid clashing w
 |-------|--------|
 | Data cleaning | `01_agent_clean/AGENT_1_DATA_CLEANING.md` |
 | Feature engineering | `02_agent_feature/AGENT_2_FEATURE_ENGINEERING.md` |
+| Model selection | `03_agent_model/AGENT_3_MODEL_SELECTION.md` |
 
 **LLM:** [Qwen Cloud](https://docs.qwencloud.com/developer-guides/getting-started/introduction)
 

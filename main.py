@@ -1,7 +1,10 @@
 import os
 import sys
+import json
+
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+import shutil
 
 from openai import OpenAI
 
@@ -21,8 +24,6 @@ def _load_dotenv(path=".env"):
                 continue
             key, _, value = line.partition("=")
             os.environ.setdefault(key.strip(), value.strip())
-
-
 _load_dotenv()
 
 
@@ -31,6 +32,30 @@ def _dashscope_client():
         api_key=os.getenv("DASHSCOPE_API_KEY"),
         base_url="https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
     )
+
+
+def cleanup_previous_runs():
+    """Removes specific generated files from previous runs."""
+    files_to_delete = [
+        "01_agent_clean/cleaned.csv",
+        "01_agent_clean/cleaning_report.md",
+        "02_agent_feature/featured.csv",
+        "02_agent_feature/feature_report.md",
+        "state.json"
+    ]
+    
+    for file_path in files_to_delete:
+        path = Path(file_path)
+        if path.exists():
+            path.unlink()
+            print(f"Deleted: {file_path}")
+        else:
+            print(f"Not found, skipping: {file_path}")
+            
+    # Re-initialize state.json as an empty dictionary after deletion
+    with open("state.json", "w") as f:
+        json.dump({}, f)
+    print("State initialized: state.json cleared.")
 
 
 def call_llm(system, user):
@@ -54,23 +79,29 @@ def _load_agent(module_name: str, folder: str, filename: str):
 
 
 def main():
-    # # AGENT 1
-    # print("Running Agent 1: Data Cleaning...")
-    # agent_1 = _load_agent("agent_1", "01_agent_clean", "agent_1.py")
-    # result_1 = agent_1.run(call_llm)
-    # print(f"Agent 1 done: {result_1['rows_in']:,} → {result_1['rows_out']:,} rows")
-    # print(f"Cleaned CSV: {result_1['cleaned_csv']}")
-    # print(f"Report:      {result_1['report']}")
-    # print()
 
-    # # AGENT 2
-    # print("Running Agent 2: Feature Curation...")
-    # agent_2 = _load_agent("agent_2", "02_agent_feature", "agent_2.py")
-    # result_2 = agent_2.run(call_llm)
-    # print(f"Agent 2 done: {result_2['rows_in']:,} → {result_2['rows_out']:,} rows")
-    # print(f"New columns: {', '.join(result_2['new_columns']) or '(none)'}")
-    # print(f"Featured CSV: {result_2['featured_csv']}")
-    # print(f"Report:       {result_2['report']}")
+    
+
+    # Delete all previously generated files for a fresh start
+    cleanup_previous_runs()
+    
+    # AGENT 1
+    print("Running Agent 1: Data Cleaning...")
+    agent_1 = _load_agent("agent_1", "01_agent_clean", "agent_1.py")
+    result_1 = agent_1.run(call_llm)
+    print(f"Agent 1 done: {result_1['rows_in']:,} → {result_1['rows_out']:,} rows")
+    print(f"Cleaned CSV: {result_1['cleaned_csv']}")
+    print(f"Report:      {result_1['report']}")
+    print()
+
+    # AGENT 2
+    print("Running Agent 2: Feature Curation...")
+    agent_2 = _load_agent("agent_2", "02_agent_feature", "agent_2.py")
+    result_2 = agent_2.run(call_llm)
+    print(f"Agent 2 done: {result_2['rows_in']:,} → {result_2['rows_out']:,} rows")
+    print(f"New columns: {', '.join(result_2['new_columns']) or '(none)'}")
+    print(f"Featured CSV: {result_2['featured_csv']}")
+    print(f"Report:       {result_2['report']}")
 
     # AGENT 3
     print("Running Agent 3: Model Selection...")

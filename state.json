@@ -1,0 +1,41 @@
+{
+  "data_cleaning": {
+    "agent": "data_cleaning",
+    "input": "C:\\code-projects\\crewml\\data.csv",
+    "cleaned_csv": "C:\\code-projects\\crewml\\01_agent_clean\\cleaned.csv",
+    "report": "C:\\code-projects\\crewml\\01_agent_clean\\cleaning_report.md",
+    "rows_in": 251079,
+    "rows_out": 251079
+  },
+  "feature_engineering": {
+    "agent": "feature_engineering",
+    "input": "C:\\code-projects\\crewml\\01_agent_clean\\cleaned.csv",
+    "featured_csv": "C:\\code-projects\\crewml\\02_agent_feature\\featured.csv",
+    "report": "C:\\code-projects\\crewml\\02_agent_feature\\feature_report.md",
+    "rows_in": 251079,
+    "rows_out": 251079,
+    "new_columns": [
+      "vehicle_age",
+      "log_mileage_in_km",
+      "mileage_per_year",
+      "pca_power_1"
+    ]
+  },
+  "Agent_3_Model_Selection": {
+    "comparison_table": {
+      "Linear Regression": {
+        "R2_Score": 0.4556,
+        "RMSE": 32580.16
+      },
+      "Random Forest": {
+        "R2_Score": 0.5964,
+        "RMSE": 28051.82
+      },
+      "Gradient Boosting": {
+        "R2_Score": 0.5371,
+        "RMSE": 30044.36
+      }
+    },
+    "analysis": "Based on the test set evaluation, the Random Forest model is the optimal choice for the final pipeline, as it achieves both the highest R\u00b2 score (0.5964) and the lowest RMSE (28051.82). By explaining nearly 60% of the variance in car prices while maintaining the smallest average prediction error, it significantly outperforms Gradient Boosting and Linear Regression. This consistent advantage across both key metrics demonstrates that Random Forest effectively captures complex, non-linear relationships within the dataset without overfitting, making it the most accurate, robust, and reliable model for production deployment."
+  }
+}

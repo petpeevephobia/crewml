@@ -1,63 +1,68 @@
-## Feature Strategy Summary
-Proposed four engineered features targeting core automotive valuation drivers:
-1. **vehicle_age** (year_delta) aligns calendar year with depreciation mechanics.
-2. **mileage_per_year** (ratio) normalizes wear by age, distinguishing high-utilization fleets from personal vehicles.
-3. **log_mileage_in_km** (log1p) corrects heavy right-skew in odometer data for stable gradient-based optimization.
-4. **pca_fuel_efficiency** (PCA) compresses two correlated consumption metrics into orthogonal components, mitigating multicollinearity while retaining efficiency signals.
-All features use robust clipping/epsilon safeguards against extreme outliers observed in the profile (e.g., future years, zero denominators).
+## Feature Engineering Strategy
+
+This proposal transforms raw automotive attributes into physically meaningful and statistically robust predictors for price regression. The strategy follows four core principles:
+
+1. **Temporal Depreciation Modeling**: `vehicle_age` converts calendar years into a continuous depreciation timeline, aligning directly with industry valuation curves and age-based discounting.
+2. **Distribution Normalization**: `log_mileage_in_km` corrects the heavy right-tail of the odometer data. By applying `log1p`, we ensure tree-based splits are more balanced and linear models are not disproportionately influenced by extreme mileage outliers.
+3. **Usage Intensity Normalization**: `mileage_per_year` builds directly on the age feature to calculate annualized driving distance. This isolates heavily utilized vehicles from low-mileage collector examples, capturing wear-and-tear dynamics independent of absolute age.
+4. **Redundancy & Multicollinearity Reduction**: `power_kw` and `power_ps` convey identical information. Applying PCA extracts a single latent performance factor (`pca_power_1`), reducing feature dimensionality, preventing variance inflation, and improving model convergence stability.
+
+All transformations are designed to execute sequentially after basic null imputation, ensuring compatibility with both gradient-boosted trees and regularized linear pipelines.
 
 ## Run stats
 
 - Input rows: 251,079
 - Output rows: 251,079
-- New columns (5): vehicle_age, mileage_per_year, log_mileage_in_km, pca_fuel_1, pca_fuel_2
+- New columns (4): vehicle_age, log_mileage_in_km, mileage_per_year, pca_power_1
 
 ## Proposed features
 
 ### `vehicle_age`
 
 - **Action:** `year_delta`
-- **Justification:** Converts calendar year to vehicle age, which aligns with real-world depreciation curves and warranty expiration timelines more closely than raw year values.
+- **Justification:** Captures linear depreciation, which is the dominant pricing factor in the secondary automotive market. Age provides a continuous proxy for technological obsolescence, warranty expiry, and accumulated mechanical wear.
 - **Pandas code:**
 
 ```python
-df['vehicle_age'] = 2023 - df['year'].clip(upper=2023)
-```
-
-### `mileage_per_year`
-
-- **Action:** `ratio`
-- **Justification:** Annualized usage intensity separates low-mileage older cars from high-mileage newer ones, providing a stronger signal for wear-and-tear than raw odometer readings.
-- **Pandas code:**
-
-```python
-df['mileage_per_year'] = df['mileage_in_km'] / (df['vehicle_age'] + 1)
+df['vehicle_age'] = 2024 - df['year']
 ```
 
 ### `log_mileage_in_km`
 
 - **Action:** `log1p`
-- **Justification:** Mileage exhibits heavy right-skew with a long tail of high-kilometer vehicles; log1p stabilizes variance and improves linear model convergence.
+- **Justification:** Odometer readings are heavily right-skewed with extreme high-end values that distort distance metrics and linear models. The log1p transform compresses the tail, stabilizes variance, and linearizes the non-linear price decay associated with distance.
 - **Pandas code:**
 
 ```python
-df['log_mileage_in_km'] = np.log1p(df['mileage_in_km'].clip(lower=0))
+df['log_mileage_in_km'] = np.log1p(df['mileage_in_km'])
 ```
 
-### `pca_fuel_efficiency`
+### `mileage_per_year`
 
-- **Action:** `pca`
-- **Justification:** Volume and mass fuel consumption are highly collinear; PCA orthogonalizes them into efficiency and density components, reducing multicollinearity while preserving predictive variance.
+- **Action:** `ratio`
+- **Justification:** Normalizes total distance traveled by vehicle age to distinguish high-intensity daily drivers from garage-kept or city-only cars. This usage intensity signal often predicts resale value more accurately than raw mileage or age alone.
 - **Pandas code:**
 
 ```python
-from sklearn.decomposition import PCA\nX = df[['fuel_consumption_l_100km','fuel_consumption_g_km']].fillna(df[['fuel_consumption_l_100km','fuel_consumption_g_km']].median()).clip(upper=300)\ncomps = PCA(n_components=2).fit_transform(X)\ndf[['pca_fuel_1','pca_fuel_2']] = comps
+df['mileage_per_year'] = df['mileage_in_km'] / (df['vehicle_age'] + 1e-6)
+```
+
+### `pca_engine_power`
+
+- **Action:** `pca`
+- **Justification:** Engine output is duplicated across kilowatts and metric horsepower, which are linearly dependent (1 kW ≈ 1.341 PS). PCA condenses these redundant features into a single orthogonal component, mitigating multicollinearity while preserving the underlying performance variance for downstream models.
+- **Pandas code:**
+
+```python
+from sklearn.decomposition import PCA
+pca = PCA(n_components=1)
+df['pca_power_1'] = pca.fit_transform(df[['power_kw', 'power_ps']].fillna(method='ffill'))[:, 0]
 ```
 
 
 ## Steps applied (code)
 
-- year_delta vehicle_age = 2023 - year
-- ratio mileage_per_year = mileage_in_km / (vehicle_age + 1.0)
+- year_delta vehicle_age = 2024 - year
 - log1p log_mileage_in_km from mileage_in_km
-- pca on ['fuel_consumption_l_100km', 'fuel_consumption_g_km'] → pca_fuel_1..2 (explained variance ratios: [0.558, 0.442])
+- ratio mileage_per_year = mileage_in_km / (vehicle_age + 1e-06)
+- pca on ['power_kw', 'power_ps'] → pca_power_1..1 (explained variance ratios: [0.971])

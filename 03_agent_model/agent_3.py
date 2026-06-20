@@ -25,6 +25,33 @@ Here are their actual performance metrics on the test set:
 Write a brief, 1-paragraph analysis justifying which model performed best and why we should select it for the final pipeline.
 Return ONLY plain text."""
 
+
+
+def update_state(agent_id: str, new_data: dict):
+    """
+    Safely reads state.json, updates the entry for this agent, 
+    and writes the entire state back.
+    """
+    state_file = _ROOT / "state.json"
+    
+    # Load existing state or start with empty dict
+    data = {}
+    if state_file.exists() and state_file.stat().st_size > 0:
+        try:
+            with open(state_file, 'r') as f:
+                data = json.load(f)
+        except json.JSONDecodeError:
+            pass # File exists but is corrupt/empty; start fresh
+            
+    # Update state for this specific agent
+    data[agent_id] = new_data
+    
+    # Save back to file
+    with open(state_file, 'w') as f:
+        json.dump(data, f, indent=2)
+
+
+
 # Train 3 models -> evaluate -> update state.json
 """
 If developing Agent 3 and want to test its data handling entirely by itself:
@@ -52,7 +79,7 @@ def run(call_llm, input_path: str | None = None) -> dict:
     y = df[target_col]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # 2. train models (42 is always the answer)
+    # 2. train models (42 is always the answer lol)
     models = {
         "Linear Regression": LinearRegression(),
         "Random Forest": RandomForestRegressor(n_estimators=50, random_state=42),
@@ -68,7 +95,7 @@ def run(call_llm, input_path: str | None = None) -> dict:
         rmse = mean_squared_error(y_test, predictions) ** 0.5           # raise standard MSE to power of 0.5 to get RMSE (root MSE). better to compare against other models
         results[name] = {"R2_Score": round(r2, 4), "RMSE": round(rmse, 2)}
 
-    # 4. inject metrics dictionary into LLM prompt template
+    # 4. inject metrics into LLM prompt template
     # json.dumps() turns our Python dictionary into a cleanly formatted string for the LLM to read
     formatted_prompt = SYSTEM_PROMPT.format(metrics=json.dumps(results, indent=2))
 
@@ -88,7 +115,7 @@ def run(call_llm, input_path: str | None = None) -> dict:
 
     state['Agent_3_Model_Selection'] = agent_output
 
-    with open(STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump(state, f, indent=4)
+    # Use the helper function instead of manual open/read/write logic
+    update_state("Agent_3_Model_Selection", agent_output)
 
     return agent_output
