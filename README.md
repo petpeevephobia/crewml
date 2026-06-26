@@ -26,6 +26,7 @@ Each agent folder has its own manual:
 | Data cleaning | `01_agent_clean/AGENT_1_DATA_CLEANING.md` |
 | Feature engineering | `02_agent_feature/AGENT_2_FEATURE_ENGINEERING.md` |
 | Model selection | `03_agent_model/AGENT_3_MODEL_SELECTION.md` |
+| Model validation | `04_agent_validation/AGENT_4_MODEL_VALIDATION.md` |
 
 **LLM:** [Qwen Cloud](https://docs.qwencloud.com/developer-guides/getting-started/introduction)
 
