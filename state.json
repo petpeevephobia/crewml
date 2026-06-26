@@ -18,24 +18,54 @@
       "vehicle_age",
       "mileage_per_year",
       "log_mileage",
-      "log_power"
+      "age_bucket"
     ]
   },
   "model_selection": {
     "comparison_table": {
       "Linear Regression": {
-        "R2_Score": 0.4597,
-        "RMSE": 32458.37
+        "R2_Score": 0.4556,
+        "RMSE": 32580.16
       },
       "Random Forest": {
-        "R2_Score": 0.5804,
-        "RMSE": 28602.17
+        "R2_Score": 0.5964,
+        "RMSE": 28051.82
       },
       "Gradient Boosting": {
-        "R2_Score": 0.5362,
-        "RMSE": 30072.61
+        "R2_Score": 0.5371,
+        "RMSE": 30044.36
       }
     },
-    "analysis": "The Random Forest model is the clear winner and should be selected for the final pipeline, as it delivers both the highest R2 score of 0.5804 and the lowest RMSE of 28602.17 across all candidates. While Gradient Boosting shows competitive results, it falls short on both explained variance and average prediction error, and Linear Regression significantly underperforms due to its inability to model the complex, non-linear relationships typical in car pricing. The Random Forest's superior generalization, tighter error margin, and inherent robustness to feature interactions make it the most accurate and production-ready choice for deployment."
+    "analysis": "Based on the test set evaluation metrics, the Random Forest model is the clear winner and should be selected for the final pipeline. It achieved the highest R2 score of 0.5964, meaning it explains the largest proportion of price variance, while simultaneously delivering the lowest RMSE of 28051.82, which translates to the smallest average prediction error in dollar terms. Both the Gradient Boosting and Linear Regression models underperformed across these complementary accuracy benchmarks, making the Random Forest the most robust and reliable choice for production deployment."
+  },
+  "validation": {
+    "winner_model": "Random Forest",
+    "original_test_metrics": {
+      "R2_Score": 0.5964,
+      "RMSE": 28051.82
+    },
+    "cross_validation": {
+      "model": "Random Forest",
+      "n_folds": 5,
+      "fold_r2_scores": [
+        0.4786,
+        0.5208,
+        0.2827,
+        0.6547,
+        0.7288
+      ],
+      "mean_r2": 0.5331,
+      "std_r2": 0.1542,
+      "fold_rmse_scores": [
+        30695.62,
+        33972.29,
+        26167.29,
+        18473.45,
+        8069.7
+      ],
+      "mean_rmse": 23475.67,
+      "std_rmse": 9294.27
+    },
+    "verdict": "The cross-validation results confirm that the original single-split test metrics are broadly representative, suggesting the model is not severely overfitting or underfitting. The original R2 score of 0.60 sits slightly above the cross-validated mean of 0.53, and the original RMSE of roughly 28,000 falls comfortably within the distribution of the five folds. This alignment indicates the initial evaluation was a fair snapshot of the model's expected baseline performance on new data.\n\nHowever, the variance across folds is concerning and too high for a reliable production system. R2 scores fluctuate dramatically from a weak 0.28 to a strong 0.73, while RMSE ranges from just over 8,000 to nearly 34,000. This fourfold swing in prediction error demonstrates that the model's accuracy is highly dependent on which specific data points end up in each split, pointing to underlying instability, potential non-uniform data distributions, or insufficient regularization.\n\nI do not recommend deploying the model as-is due to these unpredictable error margins. The priority should be to tune the model further, specifically adjusting hyperparameters to control tree complexity and penalize variance, while verifying that data stratification is properly enforced. If hyperparameter optimization fails to stabilize performance across folds, the pipeline should be paused to collect additional representative data before proceeding to deployment."
   }
 }

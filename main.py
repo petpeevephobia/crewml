@@ -85,7 +85,7 @@ def main():
     cleanup_previous_runs()
     
     # AGENT 1
-    print("Running Agent 1: Data Cleaning...")
+    print("Running Agent 1: Data Cleaning ...")
     agent_1 = _load_agent("agent_1", "01_agent_clean", "agent_1.py")
     result_1 = agent_1.run(call_llm)
     print(f"Agent 1 done: {result_1['rows_in']:,} → {result_1['rows_out']:,} rows")
@@ -94,7 +94,7 @@ def main():
     print()
 
     # AGENT 2
-    print("Running Agent 2: Feature Curation...")
+    print("Running Agent 2: Feature Curation ...")
     agent_2 = _load_agent("agent_2", "02_agent_feature", "agent_2.py")
     result_2 = agent_2.run(call_llm)
     print(f"Agent 2 done: {result_2['rows_in']:,} → {result_2['rows_out']:,} rows")
@@ -104,7 +104,7 @@ def main():
     print()
 
     # AGENT 3
-    print("Running Agent 3: Model Selection...")
+    print("Running Agent 3: Model Selection ...")
     agent_3 = _load_agent("agent_3", "03_agent_model", "agent_3.py")
     result_3 = agent_3.run(call_llm)
     print(f"Agent 3 done: {result_3['analysis']}")
@@ -113,6 +113,16 @@ def main():
         print(f"    - R2 Score: {metrics['R2_Score']}")
         print(f"    - RMSE:     {metrics['RMSE']}")
     print("Results saved to state.json")
+    print()
+
+    # AGENT 4
+    print("Running Agent 4: Validation ...")
+    agent_4 = _load_agent("agent_4", "04_agent_validation", "agent_4.py")
+    result_4 = agent_4.run(call_llm)
+    print(f"Agent 4 done.")
+    print(f"  Winner model: {result_4['winner_model']}")
+    print(f"  Mean CV R-square:  {result_4['cross_validation']['mean_r2']}\n  (+/-{result_4['cross_validation']['std_r2']})")
+    print(f"  Verdict:\n{result_4['verdict']}")
     print()
 
 

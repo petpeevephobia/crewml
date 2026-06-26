@@ -1,32 +1,27 @@
-### Feature Engineering Strategy
-This pipeline introduces four high-impact transformations tailored for automotive price prediction:
-
-1. **Temporal & Usage Dynamics**: `vehicle_age` establishes the baseline depreciation timeline, while `mileage_per_year` refines it by quantifying annual wear intensity. Together, they resolve the ambiguity of a high-mileage young car versus a low-mileage old car.
-2. **Distribution Normalization**: `log_mileage` and `log_power` apply `log1p` to compress heavy right-tails. This stabilizes variance, mitigates outlier leverage, and aligns feature scales with tree-splitting heuristics and linear assumptions.
-3. **Numerical Safety**: All operations use safe division (`epsilon=1e-6`) and `log1p` to gracefully handle zero-values or missing casts, ensuring robust integration into downstream cross-validation and training loops.
+This feature engineering strategy focuses on capturing depreciation dynamics, usage intensity, and distributional properties critical for vehicle pricing models. First, `vehicle_age` is derived from the manufacturing year to serve as a direct, interpretable proxy for chronological depreciation. Second, `mileage_per_year` normalizes odometer readings by age, isolating high-wear vehicles from well-preserved ones and providing a clearer signal of actual asset condition. Third, `log_mileage` linearizes the heavy-tailed mileage distribution, improving stability for both gradient-based optimizers and tree-based splits. Finally, `age_bucket` discretizes age into five equal-width bands, enabling the model to learn non-linear price drops across distinct vehicle lifecycle stages without requiring complex interaction terms. Together, these derived features enhance predictive signal while maintaining computational efficiency and interpretability.
 
 ## Run stats
 
 - Input rows: 251,079
 - Output rows: 251,079
-- New columns (4): vehicle_age, mileage_per_year, log_mileage, log_power
+- New columns (4): vehicle_age, mileage_per_year, log_mileage, age_bucket
 
 ## Proposed features
 
 ### `vehicle_age`
 
 - **Action:** `year_delta`
-- **Justification:** Computes the chronological age of the vehicle, directly capturing the primary depreciation driver. Newer cars retain value better, while age interacts non-linearly with mechanical reliability and market demand.
+- **Justification:** Directly quantifies the chronological age of the vehicle, which is the primary driver of depreciation and strongly correlates with market price.
 - **Pandas code:**
 
 ```python
-df['vehicle_age'] = 2023 - pd.to_numeric(df['year'], errors='coerce')
+df['vehicle_age'] = 2023 - df['year']
 ```
 
 ### `mileage_per_year`
 
 - **Action:** `ratio`
-- **Justification:** Normalizes cumulative wear by dividing mileage by age. This isolates usage intensity (e.g., high-km daily commuter vs. low-km collector car), a stronger pricing signal than raw mileage alone.
+- **Justification:** Measures usage intensity by normalizing total distance traveled by the car's age, helping the model distinguish between lightly driven older cars and heavily used newer ones.
 - **Pandas code:**
 
 ```python
@@ -36,21 +31,21 @@ df['mileage_per_year'] = df['mileage_in_km'] / (df['vehicle_age'] + 1e-6)
 ### `log_mileage`
 
 - **Action:** `log1p`
-- **Justification:** Addresses the heavy right-skew in odometer data. Log-transformation linearizes the relationship with log-priced targets and reduces the disproportionate influence of ultra-high-mileage outliers on model training.
+- **Justification:** Applies a logarithmic transform to right-skewed mileage data, linearizing the relationship between distance traveled and price depreciation for better model stability and gradient flow.
 - **Pandas code:**
 
 ```python
 df['log_mileage'] = np.log1p(df['mileage_in_km'])
 ```
 
-### `log_power`
+### `age_bucket`
 
-- **Action:** `log1p`
-- **Justification:** Compresses the wide dynamic range of engine power (1kW to >2000kW). Stabilizes variance and improves gradient-based or distance-based model performance while preserving monotonicity with price.
+- **Action:** `bin`
+- **Justification:** Discretizes vehicle age into equal-width categories, allowing tree-based and linear models to capture non-linear depreciation phases (e.g., steep initial drop vs. gradual decline) without manual threshold tuning.
 - **Pandas code:**
 
 ```python
-df['log_power'] = np.log1p(df['power_kw'])
+df['age_bucket'] = pd.cut(df['vehicle_age'], bins=5, labels=False).astype(int)
 ```
 
 
@@ -59,4 +54,4 @@ df['log_power'] = np.log1p(df['power_kw'])
 - year_delta vehicle_age = 2023 - year
 - ratio mileage_per_year = mileage_in_km / (vehicle_age + 1e-06)
 - log1p log_mileage from mileage_in_km
-- log1p log_power from power_kw
+- bin age_bucket from vehicle_age (5 bins)
