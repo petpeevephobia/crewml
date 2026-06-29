@@ -1,17 +1,26 @@
-This feature engineering strategy focuses on capturing depreciation dynamics, usage intensity, and distributional properties critical for vehicle pricing models. First, `vehicle_age` is derived from the manufacturing year to serve as a direct, interpretable proxy for chronological depreciation. Second, `mileage_per_year` normalizes odometer readings by age, isolating high-wear vehicles from well-preserved ones and providing a clearer signal of actual asset condition. Third, `log_mileage` linearizes the heavy-tailed mileage distribution, improving stability for both gradient-based optimizers and tree-based splits. Finally, `age_bucket` discretizes age into five equal-width bands, enabling the model to learn non-linear price drops across distinct vehicle lifecycle stages without requiring complex interaction terms. Together, these derived features enhance predictive signal while maintaining computational efficiency and interpretability.
+# Feature Engineering Strategy for Vehicle Price Prediction
+
+This pipeline introduces four high-value derived features designed to capture core depreciation mechanics and vehicle utility profiles:
+
+1. **Vehicle Age (`vehicle_age`)**: The foundational feature for used car pricing. Linearly models time-based depreciation and anchors all valuation curves.
+2. **Mileage Intensity (`mileage_per_year`)**: By dividing total mileage by age, we isolate usage intensity. This is critical for separating ex-fleet or heavily driven cars from well-preserved personal vehicles, resolving multicollinearity between age and raw odometer readings.
+3. **Log-Transformed Mileage (`log_mileage`)**: Addresses the pronounced right-skew in odometer data. The log transformation compresses extreme outliers while preserving fine-grained discrimination among low-mileage vehicles, which typically command significant price premiums.
+4. **Power-Efficiency Ratio (`power_efficiency_ratio`)**: Divides engine power by fuel consumption to create a continuous proxy for vehicle class and engineering focus. High ratios signal performance or luxury models (higher price tier), while low ratios indicate economy-focused engineering, providing a strong interaction signal for both linear and tree-based models.
+
+These features are engineered sequentially to maximize information gain, maintain numerical stability, and provide interpretable economic signals for downstream pricing algorithms.
 
 ## Run stats
 
 - Input rows: 251,079
 - Output rows: 251,079
-- New columns (4): vehicle_age, mileage_per_year, log_mileage, age_bucket
+- New columns (0): (none)
 
 ## Proposed features
 
 ### `vehicle_age`
 
-- **Action:** `year_delta`
-- **Justification:** Directly quantifies the chronological age of the vehicle, which is the primary driver of depreciation and strongly correlates with market price.
+- **Action:** `{'action': 'year_delta', 'column': 'year', 'reference_year': 2023}`
+- **Justification:** Directly captures chronological depreciation, which is the strongest linear driver of used car market value.
 - **Pandas code:**
 
 ```python
@@ -20,8 +29,8 @@ df['vehicle_age'] = 2023 - df['year']
 
 ### `mileage_per_year`
 
-- **Action:** `ratio`
-- **Justification:** Measures usage intensity by normalizing total distance traveled by the car's age, helping the model distinguish between lightly driven older cars and heavily used newer ones.
+- **Action:** `{'action': 'ratio', 'column_a': 'mileage_in_km', 'column_b': 'vehicle_age', 'epsilon': 1e-06}`
+- **Justification:** Normalizes total distance traveled by age to distinguish heavily used fleet vehicles from lightly owned private cars of identical model years, reducing collinearity between age and raw mileage.
 - **Pandas code:**
 
 ```python
@@ -30,28 +39,28 @@ df['mileage_per_year'] = df['mileage_in_km'] / (df['vehicle_age'] + 1e-6)
 
 ### `log_mileage`
 
-- **Action:** `log1p`
-- **Justification:** Applies a logarithmic transform to right-skewed mileage data, linearizing the relationship between distance traveled and price depreciation for better model stability and gradient flow.
+- **Action:** `{'action': 'log1p', 'column': 'mileage_in_km'}`
+- **Justification:** Compresses the heavy right-skew of odometer readings, stabilizing variance and improving model sensitivity to low-mileage premiums while mitigating the impact of extreme high-mileage outliers.
 - **Pandas code:**
 
 ```python
 df['log_mileage'] = np.log1p(df['mileage_in_km'])
 ```
 
-### `age_bucket`
+### `power_efficiency_ratio`
 
-- **Action:** `bin`
-- **Justification:** Discretizes vehicle age into equal-width categories, allowing tree-based and linear models to capture non-linear depreciation phases (e.g., steep initial drop vs. gradual decline) without manual threshold tuning.
+- **Action:** `{'action': 'ratio', 'column_a': 'power_kw', 'column_b': 'fuel_consumption_l_100km', 'epsilon': 1e-06}`
+- **Justification:** Captures the engineering trade-off between engine output and fuel economy, providing a robust proxy for vehicle class that helps models differentiate high-value performance/luxury models from economy cars.
 - **Pandas code:**
 
 ```python
-df['age_bucket'] = pd.cut(df['vehicle_age'], bins=5, labels=False).astype(int)
+df['power_efficiency_ratio'] = df['power_kw'] / (df['fuel_consumption_l_100km'] + 1e-6)
 ```
 
 
 ## Steps applied (code)
 
-- year_delta vehicle_age = 2023 - year
-- ratio mileage_per_year = mileage_in_km / (vehicle_age + 1e-06)
-- log1p log_mileage from mileage_in_km
-- bin age_bucket from vehicle_age (5 bins)
+- skip unknown action: {'action': 'year_delta', 'column': 'year', 'reference_year': 2023}
+- skip unknown action: {'action': 'ratio', 'column_a': 'mileage_in_km', 'column_b': 'vehicle_age', 'epsilon': 1e-06}
+- skip unknown action: {'action': 'log1p', 'column': 'mileage_in_km'}
+- skip unknown action: {'action': 'ratio', 'column_a': 'power_kw', 'column_b': 'fuel_consumption_l_100km', 'epsilon': 1e-06}

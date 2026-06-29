@@ -129,7 +129,7 @@ def run(call_llm, input_path: str | None = None) -> dict:
     csv_path = _ROOT / input_path if input_path else INPUT_CSV
     X, y = _prepare_data(csv_path)
 
-    # 3. Instantiate the winnong model from the registry
+    # 3. Instantiate the winning model from registry
     if winner_name not in MODEL_REGISTRY:
         raise ValueError(
             f"Winner '{winner_name}' not in MODEL_REGISTRY. "

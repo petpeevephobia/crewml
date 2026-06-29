@@ -37,7 +37,7 @@ Each agent folder has its own manual:
 1. **Data Cleaning** — nulls, outliers, dtypes → cleaned frame + change report  
 2. **Feature Engineering** — 3–5 proposed features (ratios, transforms, PCA, etc.) with code and rationale  
 3. **Model Selection** — run candidate models (e.g. RF, XGBoost, linear regression) → comparison in `state.json`  
-4. **Validation** — cross-validation, F1/RMSE, plain-English trust verdict  
+4. **Validation** — cross-validation, F1 and RMSE (more relatable to the language of business than MSE), plain-English trust verdict. This agent acts as an impartial auditor so no traces of the training process in Agent 3 will appear in the output.
 5. **Mediator** (on conflict) — reads opposing arguments from `state.json`, picks a winner, unblocks the pipeline  
 
 **Phase 3+:** Hardcoded disagreement for the demo; single-agent baseline for accuracy comparison. **Phase 4:** Minimal HTML dashboard polling `state.json` for live status during the run.
